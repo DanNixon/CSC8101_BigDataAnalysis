@@ -1,5 +1,6 @@
 import click
 import cassandra
+import voluptuous
 from user_event_db import EventDatabase
 
 
@@ -23,7 +24,10 @@ def cli(cli_data, host, keyspace, replication):
     """
     CLI for manipulating event database for coursework 1.
     """
-    cli_data.db = EventDatabase(host, keyspace, replication)
+    try:
+        cli_data.db = EventDatabase(host, keyspace, replication)
+    except:
+        raise click.ClickException("Database connection failed.")
 
 
 @cli.command()
@@ -36,7 +40,7 @@ def init(cli_data):
         cli_data.db.create_keyspace()
         cli_data.db.create_tables()
     except cassandra.protocol.AlreadyExists, e:
-        click.echo(e.message)
+        raise click.ClickException(e.message)
 
 
 @cli.command()
@@ -48,17 +52,44 @@ def drop(cli_data):
     try:
         cli_data.db.drop_keyspace()
     except cassandra.protocol.RequestValidationException, e:
-        click.echo(e.message)
+        raise click.ClickException(e.message)
 
 
-@cli.command()
+@cli.group()
 @pass_cli_data
 def insert(cli_data):
     """
     Inserts event enteries into the database.
     """
+    pass
+
+
+@insert.command("single")
+@click.option('-c', '--clientid', type=str, help='ID of client generting the visit event')
+@click.option('-s', '--timestamp', type=int, help='Batch timestamp of visit event')
+@click.option('-t', '--topic', type=str, help='Topic assigned to visited page')
+@click.option('-p', '--page', type=str, help='Name of visited page')
+@pass_cli_data
+def insert_single(cli_data, clientid, timestamp, topic, page):
+    """
+    Inserts a single event into the database.
+    """
+    try:
+        cli_data.db.record_event(
+            {"client_id": clientid, "timestamp": timestamp, "topic": topic, "page": page})
+    except voluptuous.error.Invalid, e:
+        raise click.ClickException(
+            "Input data format error ({})".format(e.msg))
+
+
+@insert.command("json")
+@pass_cli_data
+def insert_json(cli_data):
+    """
+    Inserts multiple events from a JSON file into the database.
+    """
     # TODO
-    click.echo("insert")
+    click.echo("json")
     pass
 
 
@@ -68,42 +99,63 @@ def query(cli_data):
     """
     Queries the database.
     """
-    # TODO
-    click.echo("query")
     pass
 
 
-@query.command("aaa")
+@query.command("client_visits")
+@click.option('-c', '--clientid', type=str, help='ID of client')
+@click.option('-s', '--timestamp', type=int, help='Start of batch timestamp')
+@click.option('-t', '--topic', type=str, help='Topic assigned to page')
 @pass_cli_data
-def query_aaa(cli_data):
+def query_client_visits(cli_data, clientid, timestamp, topic):
     """
-    TODO
+    Gets a list of pages related to a certain topic a client visits in a given batch timestamp.
     """
-    # TODO
-    click.echo("aaa")
-    pass
+    try:
+        results = cli_data.db.query_client_page_visits(
+            clientid, timestamp, topic)
+        # TODO
+        print results
+    except:
+        # TODO
+        raise click. ClickException("nope")
 
 
-@query.command("bbb")
+@query.command("top_pages")
+@click.option('-s', '--timestamp', type=int, help='Start of batch timestamp')
+@click.option('-t', '--topic', type=str, help='Topic assigned to page')
+@click.option('-n', '--count', type=int, default=10, help='Number of results to retrieve')
 @pass_cli_data
-def query_bbb(cli_data):
+def query_top_pages(cli_data, timestamp, topic, count):
     """
-    TODO
+    Gets the top N pages visited in a given batch timestamp ranked by visit count.
     """
-    # TODO
-    click.echo("bbb")
-    pass
+    try:
+        results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
+        # TODO
+        print results
+    except:
+        # TODO
+        raise click. ClickException("nope")
 
 
-@query.command("ccc")
+@query.command("recommendations")
+@click.option('-c', '--clientid', type=str, help='ID of client')
+@click.option('-t', '--topic', type=str, help='Topic assigned to page')
+@click.option('-n', '--count', type=int, default=10, help='Number of results to retrieve')
 @pass_cli_data
-def query_ccc(cli_data):
+def query_recommendations(cli_data, clientid, topic, count):
     """
-    TODO
+    Gets recommended pages related to a certain topic for a given client.
     """
-    # TODO
-    click.echo("ccc")
-    pass
+    try:
+        results = cli_data.db. query_recommend_for_client(
+            clientid, topic, count)
+        # TODO
+        print results
+    except:
+        # TODO
+        raise click. ClickException("nope")
 
 
 if __name__ == '__main__':
