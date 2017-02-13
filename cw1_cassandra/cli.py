@@ -1,7 +1,8 @@
 import click
 import cassandra
 import voluptuous
-from user_event_db import EventDatabase
+import json
+from user_event_db import EventDatabase, json_to_event
 
 
 class CLIData(object):
@@ -76,21 +77,26 @@ def insert_single(cli_data, clientid, timestamp, topic, page):
     """
     try:
         cli_data.db.record_event(
-            {"client_id": clientid, "timestamp": timestamp, "topic": topic, "page": page})
+                {"client_id": clientid, "timestamp": timestamp, "topic": topic, "page": page})
     except voluptuous.error.Invalid, e:
         raise click.ClickException(
-            "Input data format error ({})".format(e.msg))
+                "Input data format error ({})".format(e.msg))
 
 
 @insert.command("json")
+@click.argument("data_file", type=click.File('rb'))
 @pass_cli_data
-def insert_json(cli_data):
+def insert_json(cli_data, data_file):
     """
     Inserts multiple events from a JSON file into the database.
     """
-    # TODO
-    click.echo("json")
-    pass
+    try:
+        data = json.load(data_file)
+        events = map(json_to_event, data)
+        for e in events:
+            cli_data.db.record_event(e)
+    except RuntimeError, e:
+        raise click.ClickException(e.message)
 
 
 @cli.group()
@@ -113,9 +119,10 @@ def query_client_visits(cli_data, clientid, timestamp, topic):
     """
     try:
         results = cli_data.db.query_client_page_visits(
-            clientid, timestamp, topic)
-        # TODO
-        print results
+                clientid, timestamp, topic)
+
+        for r in results:
+            print r.page
     except:
         # TODO
         raise click. ClickException("nope")
@@ -150,7 +157,7 @@ def query_recommendations(cli_data, clientid, topic, count):
     """
     try:
         results = cli_data.db. query_recommend_for_client(
-            clientid, topic, count)
+                clientid, topic, count)
         # TODO
         print results
     except:
