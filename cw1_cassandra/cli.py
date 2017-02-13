@@ -139,8 +139,10 @@ def query_top_pages(cli_data, timestamp, topic, count):
     """
     try:
         results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
-        # TODO
-        print results
+
+        for r in results:
+            # TODO
+            print "{} ({})".format(r.page, r)
     except:
         # TODO
         raise click. ClickException("nope")
@@ -158,8 +160,9 @@ def query_recommendations(cli_data, clientid, topic, count):
     try:
         results = cli_data.db. query_recommend_for_client(
                 clientid, topic, count)
-        # TODO
-        print results
+
+        for r in results:
+            print r.page
     except:
         # TODO
         raise click. ClickException("nope")

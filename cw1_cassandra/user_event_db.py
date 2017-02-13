@@ -84,7 +84,7 @@ class EventDatabase(object):
         self._session.set_keyspace(self._keyspace)
 
         prepared = self._session.prepare("""
-            SELECT page from client_pages_visited WHERE clientid = ? AND timestamp = ? AND topic = ?
+            SELECT page FROM client_pages_visited WHERE clientid = ? AND timestamp = ? AND topic = ?
             """)
         return self._session.execute(prepared, (client_id, timestamp, topic))
 

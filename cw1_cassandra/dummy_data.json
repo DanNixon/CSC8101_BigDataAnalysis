@@ -1,18 +1,60 @@
 [
-  {
-    "client_id" : "4149719179064208",
-    "timestamp" : "2017-01-25T14:03:32",
-    "url" : {
-      "topic" : "Action",
-      "page" : "The Matrix"
-    }
-  },
-  {
-    "client_id" : "4149719179064209",
-    "timestamp" : "2017-01-25T14:03:33",
-    "url" : {
-      "topic" : "Action",
-      "page" : "The Matrix"
-    }
-  }
+{ "client_id": "A", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X1"} },
+{ "client_id": "B", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X2"} },
+{ "client_id": "A", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Y", "page": "Y1"} },
+{ "client_id": "A", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Y", "page": "Y2"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Y", "page": "Y3"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Z", "page": "Z1"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Z", "page": "Z2"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X2"} },
+
+{ "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "X", "page": "X2"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Y", "page": "Y3"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Z", "page": "Z3"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Y", "page": "Y1"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Z", "page": "Z1"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Y", "page": "Y2"} },
+{ "client_id": "A", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "X", "page": "X3"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "X", "page": "X2"} },
+
+{ "client_id": "C", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "X", "page": "X3"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Y", "page": "Y4"} },
+{ "client_id": "B", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "X", "page": "X1"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Z", "page": "Z3"} },
+{ "client_id": "D", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Y", "page": "Y4"} },
+{ "client_id": "A", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Y", "page": "Y4"} },
+{ "client_id": "A", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Y", "page": "Y5"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:30:00", "url": { "topic": "Y", "page": "Y4"} },
+
+{ "client_id": "A", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "X", "page": "X5"} },
+{ "client_id": "A", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Y", "page": "Y3"} },
+{ "client_id": "C", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Y", "page": "Y1"} },
+{ "client_id": "C", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Z", "page": "Z4"} },
+{ "client_id": "C", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Z", "page": "Z5"} },
+{ "client_id": "B", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Y", "page": "Y6"} },
+{ "client_id": "B", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "X", "page": "X5"} },
+{ "client_id": "D", "timestamp": "2017-01-25T15:15:00", "url": { "topic": "Z", "page": "Z5"} },
+
+{ "client_id": "C", "timestamp": "2017-01-25T15:30:00", "url": { "topic": "Y", "page": "Y2"} },
+{ "client_id": "D", "timestamp": "2017-01-25T15:30:00", "url": { "topic": "Y", "page": "Y5"} },
+{ "client_id": "D", "timestamp": "2017-01-25T15:30:00", "url": { "topic": "Z", "page": "Z3"} },
+{ "client_id": "D", "timestamp": "2017-01-25T15:30:00", "url": { "topic": "X", "page": "X6"} },
+
+{ "client_id": "B", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "X", "page": "X6"} },
+{ "client_id": "B", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "X", "page": "X7"} },
+{ "client_id": "B", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "Y", "page": "Y5"} },
+{ "client_id": "A", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "Z", "page": "Z5"} },
+{ "client_id": "A", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "X", "page": "X6"} },
+{ "client_id": "C", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "Z", "page": "Z5"} },
+{ "client_id": "C", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "X", "page": "X7"} },
+{ "client_id": "A", "timestamp": "2017-01-25T15:45:00", "url": { "topic": "X", "page": "X7"} },
+
+{ "client_id": "A", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Y", "page": "Y6"} },
+{ "client_id": "D", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Z", "page": "Z5"} },
+{ "client_id": "D", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Z", "page": "Z8"} },
+{ "client_id": "C", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Y", "page": "Y6"} },
+{ "client_id": "C", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Y", "page": "Y8"} },
+{ "client_id": "B", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "X", "page": "X5"} },
+{ "client_id": "C", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "X", "page": "X7"} },
+{ "client_id": "A", "timestamp": "2017-01-25T16:00:00", "url": { "topic": "Z", "page": "Z8"} }
 ]
