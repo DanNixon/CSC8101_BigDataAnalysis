@@ -5,4 +5,4 @@
 export PYSPARK_DRIVER_PYTHON=ipython
 export PYSPARK_DRIVER_PYTHON_OPTS='notebook --ip="*"' pyspark
 
-pyspark
+pyspark --num-executors 5 --driver-memory 2g --executor-memory 2g
