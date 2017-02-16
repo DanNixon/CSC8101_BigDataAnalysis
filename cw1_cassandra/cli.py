@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import click
 import cassandra
 import voluptuous
@@ -141,9 +143,9 @@ def query_top_pages(cli_data, timestamp, topic, count):
         results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
 
         for r in results:
-            # TODO
-            print "{} ({})".format(r.page, r)
+            print "({: 4d})  {}".format(r.visit_count, r.page)
     except:
+        raise
         # TODO
         raise click. ClickException("nope")
 

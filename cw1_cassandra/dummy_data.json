@@ -7,6 +7,10 @@
 { "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Z", "page": "Z1"} },
 { "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Z", "page": "Z2"} },
 { "client_id": "D", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X2"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Y", "page": "Y3"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X1"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "Y", "page": "Y1"} },
+{ "client_id": "C", "timestamp": "2017-01-25T14:00:00", "url": { "topic": "X", "page": "X1"} },
 
 { "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "X", "page": "X2"} },
 { "client_id": "D", "timestamp": "2017-01-25T14:15:00", "url": { "topic": "Y", "page": "Y3"} },

@@ -36,22 +36,32 @@ class EventDatabase(object):
     def create_tables(self):
         self._session.set_keyspace(self._keyspace)
 
+        # Create a table with client ID as partition key, this ensures
+        # uniform load distribution over all nodes on insertion (assuming mean
+        # events generated in a time period is iniform over all active clients)
+        # and that read operations only require access to a single node.
         self._session.execute("""
             CREATE TABLE IF NOT EXISTS client_pages_visited (
             clientid text,
             timestamp int,
             topic text,
             page text,
-            PRIMARY KEY (clientid, timestamp, topic)
+            PRIMARY KEY (clientid, timestamp, topic, page)
             )
             """)
 
-        # TODO
-        # self._session.execute("""
-        #     CREATE TABLE IF NOT EXISTS top_pages (
-        #     PRIMARY KEY ()
-        #     )
-        #     """)
+        # Table with timestamp and topic as partition key, ensures single node
+        # reads and moderately distributed writes.
+        self._session.execute("""
+            CREATE TABLE IF NOT EXISTS top_pages (
+            clientid text,
+            timestamp int,
+            topic text,
+            page text,
+            visit_count counter,
+            PRIMARY KEY ((timestamp, topic), page, clientid)
+            )
+            """)
 
         # TODO
         # self._session.execute("""
@@ -75,7 +85,12 @@ class EventDatabase(object):
                               "timestamp"], event["topic"], event["page"]))
 
         # Top pages in topic table
-        # TODO
+        prepared = self._session.prepare("""
+            UPDATE top_pages SET visit_count = visit_count + 1
+            WHERE clientid = ? AND timestamp = ? AND topic = ? and page = ?;
+            """)
+        self._session.execute(prepared, (event["client_id"], event["timestamp"], event[
+                              "topic"], event["page"]))
 
         # Recommendations table
         # TODO
@@ -88,11 +103,13 @@ class EventDatabase(object):
             """)
         return self._session.execute(prepared, (client_id, timestamp, topic))
 
-    def query_top_pages_in_topic(self, topic, timestamp, count):
+    def query_top_pages_in_topic(self, timestamp, topic, count):
         self._session.set_keyspace(self._keyspace)
 
-        # TODO
-        return []
+        prepared = self._session.prepare("""
+            select page, count(*) from top_pages where timestamp = ? and topic = ? group by page LIMIT ?
+            """)
+        return self._session.execute(prepared, (timestamp, topic, count))
 
     def query_recommend_for_client(self, client_id, topic, count):
         self._session.set_keyspace(self._keyspace)
