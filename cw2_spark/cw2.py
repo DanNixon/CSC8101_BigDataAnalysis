@@ -1,6 +1,7 @@
-import unicodedata
-import os
 import logging
+import os
+import unicodedata
+from neo4j.v1 import GraphDatabase
 from pyspark import SparkContext
 from pyspark.mllib.recommendation import Rating, ALS
 from pyspark.mllib.evaluation import RegressionMetrics, RankingMetrics
@@ -37,6 +38,7 @@ root_directory = '/home/ubuntu/BigDataAnalysis/data'
 netflix_raw_data = sc.textFile(os.path.join(root_directory, 'netflix_movie_titles.txt'))
 canonical_raw_data = sc.textFile(os.path.join(root_directory, 'movie_titles_canonical.txt'))
 netflix_raw_ratings = sc.textFile(os.path.join(root_directory, 'mv_all_simple.txt'))
+qualification_raw_data = sc.textFile(os.path.join(root_directory, 'qualifying_simple.txt'))
 
 
 #
@@ -57,7 +59,7 @@ def clean_title_string(title):
 def parse_netflix_data(row):
     """
     Parse a row (string) form the netflix title dataset.
-    @return Tuple of (year, title, clen title, id)
+    @return Tuple of (year, title, clen title, ID)
     """
     data = row.split(',')
 
@@ -89,15 +91,15 @@ log.debug("Parsing raw name datasets")
 netflix_data = netflix_raw_data.map(parse_netflix_data)
 canonical_data = canonical_raw_data.map(parse_canonical_data)
 
-# Group cannonical movie names by year of release
-log.debug("Grouping cannonical films by year")
+# Group canonical movie names by year of release
+log.debug("Grouping canonical films by year")
 grouped = canonical_data.groupByKey()
 films_for_year = grouped.collectAsMap()
 
 def find_netflix_alias(netflix_film):
     """
-    Finds the cannonical name of this Netflix film
-    @return Tuple of (netflix id, name), name is None if no alias was found
+    Finds the canonical name of this Netflix film
+    @return Tuple of (Netflix ID, name), name is None if no alias was found
     """
     title = netflix_film[1]
     year = netflix_film[0]
@@ -194,16 +196,82 @@ log.info("Completed task 3")
 
 #
 # TASK 4
+# Computationally evaluating model fitness
 #
 
 log.info("Starting task 4")
 
+# Create model evaluation dataset
+evaluation_data = testing_set.map(lambda p: (p.user, p.product))
+
+# Predictions for evaluation
+# Returns an RDD of tuple ((user ID, film ID), rating)
+log.debug("Creating predictions for evaluation")
+predictions = model.predictAll(evaluation_data).map(lambda r: ((r.user, r.product), r.rating))
+
+# True ratings to compare to
+# Returns an RDD of tuple ((user ID, film ID), rating)
+log.debug("Creating true comparison dataset")
+ratings_tuple = testing_set.map(lambda r: ((r.user, r.product), r.rating))
+
+# Join predictions and true data for evaluation
+log.debug("Joining prediction and true data")
+comparison_join = predictions.join(ratings_tuple)
+
+# Obtain pairs of predictions and true ratings
+log.debug("Creating comparison pairs")
+comparison_pairs = comparison_join.map(lambda r: r[1])
+
+# Create metrics
+log.debug("Creating fitness metrics")
+metrics = RegressionMetrics(comparison_pairs)
+
+# Calculate root mean square error
+log.debug("Calculating root mean square error")
+rmse = metrics.rootMeanSquaredError
+
+print("Root Mean Square error = {}".format(rmse))
+
+log.info("Completed task 4")
+
+
+#
+# TASK 5
+# Generate predictions for a qualification dataset
+#
+
+log.info("Starting task 5")
+
+def parse_qualification_data(row):
+    """
+    Parse a row (string) form the qualification dataset.
+    @return Tuple of (user ID, Netflix ID)
+    """
+    data = row.split(',')
+    return (int(data[0]), int(data[1]))
+
+# Parse qualification data
+log.debug("Parsing qualification dataset")
+qualification_data = qualification_raw_data.map(parse_qualification_data)
+
+# Generate predictions for all qualification data
+log.debug("Generating predictions for qualification dataset")
+qualification_ratings = model.predictAll(qualification_data)
+
+# Save predictions
+log.debug("Saving qualification predictions")
+qualification_ratings.saveAsTextFile(os.path.join(root_directory, 'qualification_predictions'))
+
+log.info("Completed task 5")
+
+
+#
+# TASK 6
+#
+
+log.info("Starting task 6")
+
 # TODO
-# https://spark.apache.org/docs/latest/mllib-evaluation-metrics.html#ranking-systems
-predictions = model.predictAll(test)
-predictions = model.predictAll(test_data).map(lambda r: ((r.user, r.product), r.rating))
-ratings_tuple = ratings.map(lambda r: ((r.user, r.product), r.rating))
-score_and_labels = predictions.join(ratings_tuple).map(lambda tup: tup[1])
-metrics = RegressionMetrics(scoreAndLabels)
-print("RMSE = %s" % metrics.rootMeanSquaredError)
-print("R-squared = %s" % metrics.r2)
+
+log.info("Completed task 6")
+
