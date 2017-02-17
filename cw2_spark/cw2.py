@@ -3,6 +3,7 @@ import os
 import logging
 from pyspark import SparkContext
 from pyspark.mllib.recommendation import Rating, ALS
+from pyspark.mllib.evaluation import RegressionMetrics, RankingMetrics
 
 
 # Configure logging
@@ -112,7 +113,6 @@ def find_netflix_alias(netflix_film):
 # Get map of Netflix title aliases (filter out those with no alias)
 log.debug("Gets map of Netflix IDs to cannonical names")
 netflix_alias_rdd = netflix_data.map(find_netflix_alias).filter(lambda f: f[1] is not None)
-netflix_aliases = sc.broadcast(netflix_alias_rdd.collectAsMap())
 
 log.info("Completed task 1")
 
@@ -164,6 +164,9 @@ guinea_pig_user_id = 30878
 log.debug("Generating recommendations for user")
 recommendations = model.recommendProducts(guinea_pig_user_id, 10)
 
+# Broadcast to workers (this seems to fail if done before model training)
+netflix_aliases = sc.broadcast(netflix_alias_rdd.collectAsMap())
+
 def netflix_id_to_film_name(r):
     return (netflix_aliases.value[r.product], r.rating)
 
@@ -196,3 +199,11 @@ log.info("Completed task 3")
 log.info("Starting task 4")
 
 # TODO
+# https://spark.apache.org/docs/latest/mllib-evaluation-metrics.html#ranking-systems
+predictions = model.predictAll(test)
+predictions = model.predictAll(test_data).map(lambda r: ((r.user, r.product), r.rating))
+ratings_tuple = ratings.map(lambda r: ((r.user, r.product), r.rating))
+score_and_labels = predictions.join(ratings_tuple).map(lambda tup: tup[1])
+metrics = RegressionMetrics(scoreAndLabels)
+print("RMSE = %s" % metrics.rootMeanSquaredError)
+print("R-squared = %s" % metrics.r2)
