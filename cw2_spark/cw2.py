@@ -267,9 +267,14 @@ log.info("Completed task 5")
 
 #
 # TASK 6
+# Insert ratings into Neo4j graph DB
 #
 
 log.info("Starting task 6")
+
+# Generate tuples with canonical names ready for insertion into database from smaple of ratings
+log.debug("Generating data for DB from ratings sample set")
+qualification_ratings_for_graph_db = qualification_ratings.sample(False, 0.05).map(lambda r: (r.user, netflix_aliases.value[r.product], r.rating))
 
 # TODO
 
