@@ -7,4 +7,4 @@
 export PYSPARK_DRIVER_PYTHON=ipython
 unset PYSPARK_DRIVER_PYTHON_OPTS
 
-pyspark
+pyspark --num-executors 5 --driver-memory 2g --executor-memory 2g
