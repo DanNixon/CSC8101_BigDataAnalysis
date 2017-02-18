@@ -276,7 +276,29 @@ log.info("Starting task 6")
 log.debug("Generating data for DB from ratings sample set")
 qualification_ratings_for_graph_db = qualification_ratings.sample(False, 0.05).map(lambda r: (r.user, netflix_aliases.value[r.product], r.rating))
 
-# TODO
+unformatted_cypher_query = """
+MATCH (movie:Movie {{ title:"{}" }})
+MERGE (user:User {{ id:{} }})
+CREATE (user)-[rating:RATED {{ stars:{} }}]->(movie)
+RETURN user,rating,movie
+"""
+
+# Get database credentials from file
+log.debug("Getting Neo4j credentials")
+with open(os.path.join(root_directory, 'neo4j_credentials.txt')) as f:
+    credentials = [p.strip().split(':') for p in f.readlines()][0]
+    log.debug("DB username: {}".format(credentials[0]))
+
+# Connect to the database
+log.debug("Connecting to Neo4j DB")
+neo4j_passwd = ""
+graph_db_driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth(credentials[0], credentials[1]))
+
+with graph_db_driver.session() as session:
+    log.debug("Connected to Neo4j DB")
+
+    for entry in qualification_ratings_for_graph_db:
+        session.run(unformatted_cypher_query.format(entry[1], entry[0], entry[2]))
 
 log.info("Completed task 6")
 

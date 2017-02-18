@@ -1,1 +1,4 @@
-mv_all_simple.txt
+*
+!movie_titles_canonical.txt
+!netflix_movie_titles.txt
+!qualifying_simple.txt
