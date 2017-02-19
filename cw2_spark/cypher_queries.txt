@@ -3,44 +3,44 @@
 For a given director, returns all Users who have rated more than one of their
 movies at 4.0 or above:
 
-MATCH
-(:Director {name:"Lana Wachowski"})-[:DIRECTED]->(m:Movie),
-(u:User)-[r:RATED]->(m)
-WHERE r.stars >= 4.0
-RETURN u
+MATCH (:Director {name:"Lana Wachowski"})-[:DIRECTED]->(movie:Movie), (fan:User)-[rating:RATED]->(movie)
+WHERE rating.stars >= 4.0
+RETURN fan
 
 2)
 
 For a given actor, return other actors with whom they have collaborated on more
 than 3 movies:
 
-MATCH
-(:Actor {name:"Ben Stiller"})-[:ACTS_IN]->(m:Movie),
-(a:Actor)-[:ACTS_IN]->(m)
-WITH a, COUNT(m) as numMovies
+MATCH (:Actor {name:"Ben Stiller"})-[:ACTS_IN]->(movie:Movie), (coActor:Actor)-[:ACTS_IN]->(movie)
+WITH coActor, COUNT(movie) as numMovies
 WHERE numMovies > 3
-RETURN a
+RETURN coActor
 
 3)
 
 For a given actor, returns users who highly rate movies in which their co-stars
 appear, but who has never rated a movie in which this actor has appeared:
 
-TODO
+MATCH (actor:Actor {name:"Ben Stiller"})-[:ACTS_IN]->(commonMovie:Movie), (coActor:Actor)-[:ACTS_IN]->(commonMovie)
+WITH actor, coActor, COUNT(commonMovie) as numCommonMovies
+WHERE numCommonMovies > 3
+MATCH (coActor)-[:ACTS_IN]->(coActorMovie:Movie), (:User)-[rating:RATED]->(coActorMovie)
+WHERE rating.stars > 4.0 AND NOT (actor)-[:ACTS_IN]->(coActorMovie)
+RETURN coActorMovie
 
 
 
 *)
 
-A few additional queries that were used to gather test data.
+A few additional queries that were used to write the above queries and  gather
+test data.
 
 
 Returns all directors that have fans (i.e. have a least one user that rated one
 of their movies 4 stars or above):
 
-MATCH
-(d:Director)-[:DIRECTED]->(m:Movie),
-(:User)-[r:RATED]->(m)
+MATCH (d:Director)-[:DIRECTED]->(m:Movie), (:User)-[r:RATED]->(m)
 WHERE r.stars >= 4.0
 RETURN d
 
@@ -49,4 +49,12 @@ Return all movies that have been rated:
 
 MATCH p=()-[:RATED]->(m:Movie)
 RETURN DISTINCT m.title
+
+
+Returns all the movies B (Owen Wilson) acted in that A (Ben Stiller) did not:
+
+MATCH (a:Actor {name:"Ben Stiller"})
+MATCH (:Actor {name:"Owen Wilson"})-[:ACTS_IN]->(m:Movie)
+WHERE NOT (a)-[:ACTS_IN]->(m)
+RETURN m
 
