@@ -4,7 +4,7 @@ import click
 import cassandra
 import voluptuous
 import json
-from user_event_db import EventDatabase, json_to_event
+from user_event_db import EventDatabase, json_to_event, json_to_timestamp_visists
 
 
 class CLIData(object):
@@ -39,11 +39,8 @@ def init(cli_data):
     """
     Creates the namespace and tables.
     """
-    try:
-        cli_data.db.create_keyspace()
-        cli_data.db.create_tables()
-    except cassandra.protocol.AlreadyExists, e:
-        raise click.ClickException(e.message)
+    cli_data.db.create_keyspace()
+    cli_data.db.create_tables()
 
 
 @cli.command()
@@ -52,58 +49,87 @@ def drop(cli_data):
     """
     Drops the tables and namespace from the database.
     """
-    try:
-        cli_data.db.drop_keyspace()
-    except cassandra.protocol.RequestValidationException, e:
-        raise click.ClickException(e.message)
+    cli_data.db.drop_keyspace()
 
 
 @cli.group()
-@pass_cli_data
-def insert(cli_data):
+def insert():
+    """
+    Inserts into the database.
+    """
+    pass
+
+
+@insert.group("views")
+def insert_views():
     """
     Inserts event enteries into the database.
     """
     pass
 
 
-@insert.command("single")
+@insert_views.command("single")
 @click.option('-c', '--clientid', type=str, help='ID of client generting the visit event')
 @click.option('-s', '--timestamp', type=int, help='Batch timestamp of visit event')
 @click.option('-t', '--topic', type=str, help='Topic assigned to visited page')
 @click.option('-p', '--page', type=str, help='Name of visited page')
 @pass_cli_data
-def insert_single(cli_data, clientid, timestamp, topic, page):
+def insert_views_single(cli_data, clientid, timestamp, topic, page):
     """
     Inserts a single event into the database.
     """
-    try:
-        cli_data.db.record_event(
-                {"client_id": clientid, "timestamp": timestamp, "topic": topic, "page": page})
-    except voluptuous.error.Invalid, e:
-        raise click.ClickException(
-                "Input data format error ({})".format(e.msg))
+    cli_data.db.record_visit(clientid, timestamp, topic, page)
 
 
-@insert.command("json")
+@insert_views.command("json")
 @click.argument("data_file", type=click.File('rb'))
 @pass_cli_data
-def insert_json(cli_data, data_file):
+def insert_views_json(cli_data, data_file):
     """
     Inserts multiple events from a JSON file into the database.
     """
-    try:
-        data = json.load(data_file)
-        events = map(json_to_event, data)
-        for e in events:
-            cli_data.db.record_event(e)
-    except RuntimeError, e:
-        raise click.ClickException(e.message)
+    data = json.load(data_file)
+    events = map(json_to_event, data)
+    for e in events:
+        cli_data.db.record_visit(*e)
+
+
+@insert.group("timestamp_summary")
+def insert_timestamp_summary():
+    """
+    Inserts into the top pages for timestamp table.
+    """
+    pass
+
+
+@insert_timestamp_summary.command("single")
+@click.option('-s', '--timestamp', type=int, help='Batch timestamp of visit event')
+@click.option('-t', '--topic', type=str, help='Topic assigned to visited page')
+@click.option('-p', '--page', type=str, help='Name of visited page')
+@click.option('-c', '--count', type=int, help='Count of unique page visits')
+@pass_cli_data
+def insert_timestamp_summary_single(cli_data, timestamp, topic, page, count):
+    """
+    Inserts a single top page entry.
+    """
+    cli_data.db.record_visits_in_timestamp(timestamp, topic, page, count)
+
+
+@insert_timestamp_summary.command("json")
+@click.argument("data_file", type=click.File('rb'))
+@pass_cli_data
+def insert_timestamp_summary_json(cli_data, data_file):
+    """
+    Inserts multiple top page enteries from a JSON file into the database.
+    """
+    data = json.load(data_file)
+    events = map(json_to_timestamp_visists, data)
+    for e in events:
+        cli_data.db.record_visits_in_timestamp(*e)
 
 
 @cli.group()
-@pass_cli_data
-def query(cli_data):
+def query():
     """
     Queries the database.
     """
@@ -119,15 +145,11 @@ def query_client_visits(cli_data, clientid, timestamp, topic):
     """
     Gets a list of pages related to a certain topic a client visits in a given batch timestamp.
     """
-    try:
-        results = cli_data.db.query_client_page_visits(
-                clientid, timestamp, topic)
+    results = cli_data.db.query_client_page_visits(
+        clientid, timestamp, topic)
 
-        for r in results:
-            print r.page
-    except:
-        # TODO
-        raise click. ClickException("nope")
+    for r in results:
+        print r.page
 
 
 @query.command("top_pages")
@@ -139,15 +161,10 @@ def query_top_pages(cli_data, timestamp, topic, count):
     """
     Gets the top N pages visited in a given batch timestamp ranked by visit count.
     """
-    try:
-        results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
+    results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
 
-        for r in results:
-            print "({: 4d})  {}".format(r.visit_count, r.page)
-    except:
-        raise
-        # TODO
-        raise click. ClickException("nope")
+    for r in results:
+        print "({: 4d})  {}".format(r.visits, r.page)
 
 
 @query.command("recommendations")
@@ -159,15 +176,11 @@ def query_recommendations(cli_data, clientid, topic, count):
     """
     Gets recommended pages related to a certain topic for a given client.
     """
-    try:
-        results = cli_data.db. query_recommend_for_client(
-                clientid, topic, count)
+    results = cli_data.db. query_recommend_for_client(
+        clientid, topic, count)
 
-        for r in results:
-            print r.page
-    except:
-        # TODO
-        raise click. ClickException("nope")
+    for r in results:
+        print r.page
 
 
 if __name__ == '__main__':
