@@ -1,10 +1,52 @@
-1. For a given director, returns all Users who have rated more than one of their
-   movies at 4.0 or above
+1)
 
-2. For a given actor, return other actors with whom they have collaborated on
-   more than 3 movies
+For a given director, returns all Users who have rated more than one of their
+movies at 4.0 or above:
 
-3. For a given actor, returns users who highly rate movies in which their
-   co-stars appear, but who has never rated a movie in which this actor has
-   appeared
+MATCH
+(:Director {name:"Lana Wachowski"})-[:DIRECTED]->(m:Movie),
+(u:User)-[r:RATED]->(m)
+WHERE r.stars >= 4.0
+RETURN u
+
+2)
+
+For a given actor, return other actors with whom they have collaborated on more
+than 3 movies:
+
+MATCH
+(:Actor {name:"Ben Stiller"})-[:ACTS_IN]->(m:Movie),
+(a:Actor)-[:ACTS_IN]->(m)
+WITH a, COUNT(m) as numMovies
+WHERE numMovies > 3
+RETURN a
+
+3)
+
+For a given actor, returns users who highly rate movies in which their co-stars
+appear, but who has never rated a movie in which this actor has appeared:
+
+TODO
+
+
+
+*)
+
+A few additional queries that were used to gather test data.
+
+
+Returns all directors that have fans (i.e. have a least one user that rated one
+of their movies 4 stars or above):
+
+MATCH
+(d:Director)-[:DIRECTED]->(m:Movie),
+(:User)-[r:RATED]->(m)
+WHERE r.stars >= 4.0
+RETURN d
+
+
+Return all movies that have been rated:
+
+MATCH p=()-[:RATED]->(m:Movie)
+RETURN DISTINCT m.title
 

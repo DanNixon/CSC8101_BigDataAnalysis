@@ -1,7 +1,7 @@
 import logging
 import os
 import unicodedata
-from neo4j.v1 import GraphDatabase
+from neo4j.v1 import GraphDatabase, basic_auth
 from pyspark import SparkContext
 from pyspark.mllib.recommendation import Rating, ALS
 from pyspark.mllib.evaluation import RegressionMetrics, RankingMetrics
@@ -276,7 +276,7 @@ log.info("Starting task 6")
 log.debug("Generating data for DB from ratings sample set")
 qualification_ratings_for_graph_db = qualification_ratings.sample(False, 0.05).map(lambda r: (r.user, netflix_aliases.value[r.product], r.rating))
 
-unformatted_cypher_query = """
+unformatted_cypher_query = u"""
 MATCH (movie:Movie {{ title:"{}" }})
 MERGE (user:User {{ id:{} }})
 CREATE (user)-[rating:RATED {{ stars:{} }}]->(movie)
