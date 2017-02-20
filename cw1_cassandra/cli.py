@@ -149,7 +149,7 @@ def query_client_visits(cli_data, clientid, timestamp, topic):
         clientid, timestamp, topic)
 
     for r in results:
-        print r.page
+        print "({: 4d})  {}".format(r.visits, r.page)
 
 
 @query.command("top_pages")

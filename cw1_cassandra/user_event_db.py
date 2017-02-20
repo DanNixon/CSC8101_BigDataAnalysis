@@ -45,6 +45,7 @@ class EventDatabase(object):
             timestamp bigint,
             topic text,
             page text,
+            visits counter,
             PRIMARY KEY (clientid, timestamp, topic, page)
             )
             """)
@@ -65,8 +66,9 @@ class EventDatabase(object):
         self._session.set_keyspace(self._keyspace)
 
         prepared = self._session.prepare("""
-            INSERT INTO client_pages_visited (clientid, timestamp, topic, page)
-            VALUES (?, ?, ?, ?)
+            UPDATE client_pages_visited
+            SET visits = visits + 1
+            WHERE clientid = ? AND timestamp = ? AND topic = ? AND page = ?
             """)
         self._session.execute(prepared, (client_id, timestamp, topic, page))
 
@@ -83,7 +85,7 @@ class EventDatabase(object):
         self._session.set_keyspace(self._keyspace)
 
         prepared = self._session.prepare("""
-            SELECT page FROM client_pages_visited WHERE clientid = ? AND timestamp = ? AND topic = ?
+            SELECT page, visits FROM client_pages_visited WHERE clientid = ? AND timestamp = ? AND topic = ?
             """)
         return self._session.execute(prepared, (client_id, timestamp, topic))
 
