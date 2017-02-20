@@ -148,8 +148,11 @@ def query_client_visits(cli_data, clientid, timestamp, topic):
     results = cli_data.db.query_client_page_visits(
         clientid, timestamp, topic)
 
-    for r in results:
-        print "({: 4d})  {}".format(r.visits, r.page)
+    format_str = u"{:<3} {:<62} {:<5}"
+
+    click.echo(format_str.format('#', 'Title', 'Views'))
+    for i, r in enumerate(results):
+        click.echo(format_str.format(i + 1, r.page, r.visits))
 
 
 @query.command("top_pages")
@@ -163,8 +166,11 @@ def query_top_pages(cli_data, timestamp, topic, count):
     """
     results = cli_data.db.query_top_pages_in_topic(timestamp, topic, count)
 
-    for r in results:
-        print "({: 4d})  {}".format(r.visits, r.page)
+    format_str = u"{:<3} {:<62} {:<5}"
+
+    click.echo(format_str.format('#', 'Title', 'Views'))
+    for i, r in enumerate(results):
+        click.echo(format_str.format(i + 1, r.page, r.visits))
 
 
 @query.command("recommendations")
