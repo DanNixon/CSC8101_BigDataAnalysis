@@ -6,7 +6,7 @@ from pyspark.streaming.kafka import KafkaUtils
 from pyspark.sql import SparkSession, Row
 
 
-def get_spark_session_instance(sparkConf):
+def get_spark_session_instance(spark_conf):
     """
     This method ensures that there is only ever one instance of the Spark SQL
     context. This prevents conflicts between executors.
@@ -17,14 +17,14 @@ def get_spark_session_instance(sparkConf):
     streaming-programming-guide.html#dataframe-and-sql-operations
 
     Arguments:
-        sparkConf - SparkConf - The spark context configuration object.
+        spark_conf - SparkConf - The spark context configuration object.
         This should be the same as supplied to the StreamingContext object.
 
     Returns:
         The singleton instance of the Spark SQL SparkSession object.
     """
     if "sparkSessionSingletonInstance" not in globals():
-        globals()["sparkSessionSingletonInstance"] = SparkSession.builder.config(conf=sparkConf).getOrCreate()
+        globals()["sparkSessionSingletonInstance"] = SparkSession.builder.config(conf=spark_conf).getOrCreate()
 
     return globals()["sparkSessionSingletonInstance"]
 
@@ -49,7 +49,7 @@ def send_to_cassandra(rdd, table_name):
     rdd_df = spark.createDataFrame(rdd)
 
     # Print the dataframe to the console for verification
-    rdd_df.show()
+    # rdd_df.show()
 
     # Write this dataframe to the supplied Cassandra table
     (rdd_df.write.format("org.apache.spark.sql.cassandra").mode('append').options(table=table_name, keyspace="csc8101").save())
@@ -100,7 +100,7 @@ raw_messages = KafkaUtils.createStream(ssc,
 #
 
 # window = raw_messages.window(120, 60)
-window = raw_messages.window(20, 10)
+window = raw_messages.window(60, 30)
 
 # window.pprint(10)
 
@@ -119,7 +119,7 @@ def json_to_event(data):
 
 events = window.map(json_to_event)
 
-events.pprint(10)
+# events.pprint(10)
 
 
 #
@@ -131,36 +131,54 @@ def find_lowest_timestamp(rdd):
     ts = rdd.aggregate(float('inf'), lambda a, x: min(a, x[1]), lambda a, b: min(a, b))
     return sc.parallelize([ts])
 
-timestamps = events.transform(find_lowest_timestamp)
+timestamps = events.transform(find_lowest_timestamp).map(lambda t: (0, t))
 
-timestamps.pprint(10)
+# timestamps.pprint(10)
 
+# Replace event timestamps with batch timestamps
+events_with_key = events.map(lambda e: (0, (e[0], e[1], e[2], e[3])))
+batch_timestamped_events_join = events_with_key.join(timestamps)
+
+# batch_timestamped_events is a DStream of tuple (user ID, timestamp, topic, page)
+batch_timestamped_events = batch_timestamped_events_join.map(lambda e: (e[1][0][0], e[1][1], e[1][0][2], e[1][0][3]))
+
+# batch_timestamped_events.pprint(10)
 
 #
 # TASK 5
 # Calculate the page visits for each client ID
 #
 
-# TODO
+# DStream of tuple ((user ID, timestamp, topic, page), count)
+views_by_client = batch_timestamped_events.map(lambda e: ((e[0], e[1], e[2], e[3]), 1))
 
-# Convert each element of the rdd_example rdd into a Row
-# NOTE: This is just example code please rename the DStreams and Row fields to
-# match those in your Cassandra table
-# row_rdd_example = rrd_example.map(lambda x: Row(field1=x[0],
-#     field2=x[1],
-#     field3=x[2],
-#     field4=x[3],
-#     field5=x[4]))
+# Count views of each page for each client
+client_page_views = views_by_client.reduceByKey(lambda a, b: a + b)
 
-# Convert each rdd of Rows in the DStream into a DataFrame and send to Cassandra
-# row_rdd_example.foreachRDD(lambda rdd: send_to_cassandra(rdd, your_table_name))
+# Convert each element of the DStream into a Row
+client_page_views_db = client_page_views.map(lambda e: Row(clientid=e[0][0], timestamp=e[0][1], topic=e[0][2], page=e[0][3], visits=e[1]))
+
+client_page_views_db.pprint(25)
+
+# Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
+client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages_visited"))
 
 #
 # TASK 6
 # Calculate the unique views per page
 #
 
-# TODO
+# Count unique views of each page
+# DStream of tuple ((timestamp, topic, page), count)
+page_unique_views = batch_timestamped_events.transform(lambda rdd: rdd.distinct()).map(lambda e: ((e[1], e[2], e[3]), 1)).reduceByKey(lambda a, b: a + b)
+
+# Convert each element of the DStream into a Row
+page_unique_views_db = client_page_views.map(lambda e: Row(timestamp=e[0][1], topic=e[0][2], visits=e[1], page=e[0][3]))
+
+page_unique_views_db.pprint(25)
+
+# Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
+page_unique_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "top_pages"))
 
 
 # Initiate the stream processing
