@@ -160,7 +160,7 @@ client_page_views_db = client_page_views.map(lambda e: Row(clientid=e[0][0], tim
 client_page_views_db.pprint(10)
 
 # Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
-# client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages_visited"))
+client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages_visited"))
 
 #
 # TASK 6
