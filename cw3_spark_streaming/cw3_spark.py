@@ -99,8 +99,7 @@ raw_messages = KafkaUtils.createStream(ssc,
 # Window the incoming batches
 #
 
-# window = raw_messages.window(120, 60)
-window = raw_messages.window(60, 30)
+window = raw_messages.window(120, 60)
 
 # window.pprint(10)
 
@@ -133,7 +132,7 @@ def find_lowest_timestamp(rdd):
 
 timestamps = events.transform(find_lowest_timestamp).map(lambda t: (0, t))
 
-# timestamps.pprint(10)
+timestamps.pprint(10)
 
 # Replace event timestamps with batch timestamps
 events_with_key = events.map(lambda e: (0, (e[0], e[1], e[2], e[3])))
@@ -158,10 +157,10 @@ client_page_views = views_by_client.reduceByKey(lambda a, b: a + b)
 # Convert each element of the DStream into a Row
 client_page_views_db = client_page_views.map(lambda e: Row(clientid=e[0][0], timestamp=e[0][1], topic=e[0][2], page=e[0][3], visits=e[1]))
 
-client_page_views_db.pprint(25)
+client_page_views_db.pprint(10)
 
 # Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
-client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages_visited"))
+# client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages_visited"))
 
 #
 # TASK 6
@@ -173,9 +172,9 @@ client_page_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "client_pages
 page_unique_views = batch_timestamped_events.transform(lambda rdd: rdd.distinct()).map(lambda e: ((e[1], e[2], e[3]), 1)).reduceByKey(lambda a, b: a + b)
 
 # Convert each element of the DStream into a Row
-page_unique_views_db = client_page_views.map(lambda e: Row(timestamp=e[0][1], topic=e[0][2], visits=e[1], page=e[0][3]))
+page_unique_views_db = page_unique_views.map(lambda e: Row(timestamp=e[0][0], topic=e[0][1], visits=e[1], page=e[0][2]))
 
-page_unique_views_db.pprint(25)
+page_unique_views_db.pprint(10)
 
 # Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
 page_unique_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "top_pages"))
