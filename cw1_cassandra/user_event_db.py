@@ -128,10 +128,10 @@ class EventDatabase(object):
         # Get a lit of pages the user has visited recently (in last three time
         # periods)
         visits_query = self._session.prepare("""
-            SELECT page FROM client_pages_visited WHERE timestamp IN (?, ?, ?) AND clientid = ? AND topic = ?
+            SELECT page FROM client_pages_visited WHERE timestamp IN ? AND clientid = ? AND topic = ?
             """)
         user_pages = set(map(lambda r: r.page, self._session.execute(
-            visits_query, (timestamps[0], timestamps[1], timestamps[2], client_id, topic))))
+            visits_query, (timestamps, client_id, topic))))
 
         # Generate recommendations
         recommendations = candidate_pages.difference(user_pages)
