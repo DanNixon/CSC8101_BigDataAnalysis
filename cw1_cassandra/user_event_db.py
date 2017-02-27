@@ -62,43 +62,76 @@ class EventDatabase(object):
             )
             """)
 
+        # Table used to keep track of timestamps in reverse chronological order
+        self._session.execute("""
+            CREATE TABLE IF NOT EXISTS timestamps (
+            dummy_key int,
+            timestamp bigint,
+            PRIMARY KEY (dummy_key, timestamp)
+            )
+            WITH CLUSTERING ORDER BY (timestamp DESC)
+            """)
+
     def record_visit(self, client_id, timestamp, topic, page):
         self._session.set_keyspace(self._keyspace)
 
-        prepared = self._session.prepare("""
+        client_visit_insert = self._session.prepare("""
             UPDATE client_pages_visited
             SET visits = visits + 1
             WHERE clientid = ? AND timestamp = ? AND topic = ? AND page = ?
             """)
-        self._session.execute(prepared, (client_id, timestamp, topic, page))
+        self._session.execute(client_visit_insert, (client_id, timestamp, topic, page))
 
     def record_visits_in_timestamp(self, timestamp, topic, page, visits):
         self._session.set_keyspace(self._keyspace)
 
-        prepared = self._session.prepare("""
+        summary_insert = self._session.prepare("""
             INSERT INTO top_pages (timestamp, topic, page, visits)
             VALUES (?, ?, ?, ?)
             """)
-        self._session.execute(prepared, (timestamp, topic, page, visits))
+        self._session.execute(summary_insert, (timestamp, topic, page, visits))
+
+        timestamp_insert = self._session.prepare("""
+            INSERT INTO timestamps (dummy_key, timestamp) VALUES (?, ?)
+            """)
+        self._session.execute(timestamp_insert, (1, timestamp))
 
     def query_client_page_visits(self, client_id, timestamp, topic):
         self._session.set_keyspace(self._keyspace)
 
-        prepared = self._session.prepare("""
+        visits_query = self._session.prepare("""
             SELECT page, visits FROM client_pages_visited WHERE clientid = ? AND timestamp = ? AND topic = ?
             """)
-        return self._session.execute(prepared, (client_id, timestamp, topic))
+        return self._session.execute(visits_query, (client_id, timestamp, topic))
 
     def query_top_pages_in_topic(self, timestamp, topic, count):
         self._session.set_keyspace(self._keyspace)
 
-        prepared = self._session.prepare("""
+        top_pages_query = self._session.prepare("""
             SELECT page, visits FROM top_pages WHERE timestamp = ? AND topic = ? ORDER BY visits DESC LIMIT ?
             """)
-        return self._session.execute(prepared, (timestamp, topic, count))
+        return self._session.execute(top_pages_query, (timestamp, topic, count))
 
     def query_recommend_for_client(self, client_id, topic, count):
         self._session.set_keyspace(self._keyspace)
+
+        # Get last three batch timestamps
+        timestamps = map(lambda r: r.timestamp, self._session.execute("""
+            SELECT timestamp FROM timestamps LIMIT 3
+            """))
+        print timestamps
+
+        # Get a list of pages that are currently popular in the given topic
+        candidate_pages = map(lambda r: r.page, self.query_top_pages_in_topic(timestamps[0], topic, count))
+
+        # Get a lit of pages the user has visited recently (in last three time periods)
+        visits_query = self._session.prepare("""
+            SELECT page FROM client_pages_visited WHERE timestamp IN (?, ?, ?) clientid = ? AND topic = ?
+            """)
+        user_pages = map(lambda r: r.page, self._session.execute(visits_query, (timestamp[0], timestamp[1], timestamp[2], client_id, topic)))
+
+        print candidate_pages
+        print user_pages
 
         # TODO
         return []

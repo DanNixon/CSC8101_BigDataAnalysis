@@ -134,6 +134,10 @@ timestamps = events.transform(find_lowest_timestamp).map(lambda t: (0, t))
 
 timestamps.pprint(10)
 
+# Record the timestamp in Cassandra table
+timestamps_db = timestamps.map(lambda e: Row(dummy_key=1, timestamp=e[1]))
+timestamps_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "timestamps"))
+
 # Replace event timestamps with batch timestamps
 events_with_key = events.map(lambda e: (0, (e[0], e[1], e[2], e[3])))
 batch_timestamped_events_join = events_with_key.join(timestamps)
@@ -178,7 +182,6 @@ page_unique_views_db.pprint(10)
 
 # Convert each RDD of Rows in the DStream into a DataFrame and send to Cassandra
 page_unique_views_db.foreachRDD(lambda rdd: send_to_cassandra(rdd, "top_pages"))
-
 
 # Initiate the stream processing
 ssc.start()
