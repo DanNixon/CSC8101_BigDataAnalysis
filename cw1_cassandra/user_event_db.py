@@ -80,7 +80,8 @@ class EventDatabase(object):
             SET visits = visits + 1
             WHERE clientid = ? AND timestamp = ? AND topic = ? AND page = ?
             """)
-        self._session.execute(client_visit_insert, (client_id, timestamp, topic, page))
+        self._session.execute(client_visit_insert,
+                              (client_id, timestamp, topic, page))
 
     def record_visits_in_timestamp(self, timestamp, topic, page, visits):
         self._session.set_keyspace(self._keyspace)
@@ -119,19 +120,20 @@ class EventDatabase(object):
         timestamps = map(lambda r: r.timestamp, self._session.execute("""
             SELECT timestamp FROM timestamps LIMIT 3
             """))
-        print timestamps
 
         # Get a list of pages that are currently popular in the given topic
-        candidate_pages = map(lambda r: r.page, self.query_top_pages_in_topic(timestamps[0], topic, count))
+        candidate_pages = set(map(lambda r: r.page, self.query_top_pages_in_topic(
+            timestamps[0], topic, count)))
 
-        # Get a lit of pages the user has visited recently (in last three time periods)
+        # Get a lit of pages the user has visited recently (in last three time
+        # periods)
         visits_query = self._session.prepare("""
-            SELECT page FROM client_pages_visited WHERE timestamp IN (?, ?, ?) clientid = ? AND topic = ?
+            SELECT page FROM client_pages_visited WHERE timestamp IN (?, ?, ?) AND clientid = ? AND topic = ?
             """)
-        user_pages = map(lambda r: r.page, self._session.execute(visits_query, (timestamp[0], timestamp[1], timestamp[2], client_id, topic)))
+        user_pages = set(map(lambda r: r.page, self._session.execute(
+            visits_query, (timestamps[0], timestamps[1], timestamps[2], client_id, topic))))
 
-        print candidate_pages
-        print user_pages
+        # Generate recommendations
+        recommendations = candidate_pages.difference(user_pages)
 
-        # TODO
-        return []
+        return recommendations

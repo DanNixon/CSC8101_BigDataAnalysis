@@ -186,7 +186,7 @@ def query_recommendations(cli_data, clientid, topic, count):
         clientid, topic, count)
 
     for r in results:
-        print r.page
+        print r
 
 
 if __name__ == '__main__':

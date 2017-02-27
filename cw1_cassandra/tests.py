@@ -62,6 +62,59 @@ class UserEventDBTest(unittest.TestCase):
         top_pages_timestamp_2_topic_3 = self.db.query_top_pages_in_topic(2, 'T3', 10).current_rows
         self.assertEquals(len(top_pages_timestamp_2_topic_3), 0)
 
+    def test_recommend_for_client_1(self):
+        user = 'A'
+        topic = 'T1'
+
+        # Record sample visits (only needed for user that is having pages recommended for them)
+        self.db.record_visit(user, 1, topic, 'T1.P1')
+        self.db.record_visit(user, 1, topic, 'T1.P3')
+        self.db.record_visit(user, 1, topic, 'T1.P2')
+        self.db.record_visit(user, 2, topic, 'T1.P2')
+        self.db.record_visit(user, 2, topic, 'T1.P2')
+        self.db.record_visit(user, 4, topic, 'T1.P1')
+        self.db.record_visit(user, 4, topic, 'T1.P6')
+        self.db.record_visit(user, 4, topic, 'T1.P2')
+
+        # Record page visits in timestamp
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P1', 1)
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P2', 2)
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P3', 4)
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P4', 5)
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P5', 3)
+        self.db.record_visits_in_timestamp(1, topic, 'T1.P6', 5)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P1', 7)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P2', 4)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P3', 3)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P4', 7)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P5', 8)
+        self.db.record_visits_in_timestamp(2, topic, 'T1.P6', 1)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P1', 9)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P2', 2)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P3', 3)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P4', 5)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P5', 6)
+        self.db.record_visits_in_timestamp(3, topic, 'T1.P6', 2)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P1', 1)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P2', 7)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P3', 4)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P4', 2)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P5', 1)
+        self.db.record_visits_in_timestamp(4, topic, 'T1.P6', 1)
+
+        # Test recommendations
+        pages = self.db.query_recommend_for_client(user, topic, 3)
+        self.assertEqual(len(pages), 2)
+        self.assertTrue('T1.P3' in pages)
+        self.assertTrue('T1.P4' in pages)
+
+        # Test recommendations (all pages)
+        pages = self.db.query_recommend_for_client(user, topic, 10)
+        self.assertEqual(len(pages), 3)
+        self.assertTrue('T1.P3' in pages)
+        self.assertTrue('T1.P4' in pages)
+        self.assertTrue('T1.P5' in pages)
+
 
 if __name__ == '__main__':
     unittest.main()
